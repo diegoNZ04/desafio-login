@@ -11,7 +11,7 @@ def login_view(request):
         email = request.POST['email']
         password = request.POST['password']
         
-        user = authenticate(request, email=email, password=password)
+        user = authenticate(request, username=email, password=password)
         
         if user is not None:
             login(request, user)
@@ -36,7 +36,8 @@ def register_view(request):
             messages.error(request, 'Email já cadastrado')
             return redirect('register')
         
-        user = User.objects.create_user(email=email, password=password, name=name)
+        user = User.objects.create_user(username=email, email=email, password=password, name=name)
+        user.set_password(password)
         user.save()
         messages.success(request, "Cadastro realizado com sucesso! Faça login.")
         return redirect('login')
@@ -47,6 +48,7 @@ def register_view(request):
 def menu_view(request):
     return render(request, 'authapp/menu.html')
 
+@login_required
 def logout_view(request):
     logout(request)
     return redirect('login')
