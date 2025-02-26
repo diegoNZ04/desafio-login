@@ -1,7 +1,10 @@
 import re
 from django.shortcuts import render, redirect
+from django.core.mail import send_mail
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
+
+from desafiologin import settings
 from .models import User
 from django.contrib.auth.decorators import login_required
 
@@ -16,8 +19,8 @@ def login_view(request):
             messages.error(request, 'Email e senha são obrigatórios')
             return redirect('login')
         
-        user = user.objects.filter(email=email).first()
-        if user is None:
+        user = User.objects.filter(email=email).first()
+        if not user:
             messages.error(request, 'Email inexistente.')
             return redirect('login')
         
@@ -50,7 +53,7 @@ def register_view(request):
             return redirect('register') 
         
         if len(password) < 8 or not re.search(r'[A-Z]', password) or not re.search(r'[0-9]', password) or not re.search(r'[\W_]', password):
-            messages.error(request, 'A senha não está no padrão solicitado.')
+            messages.error(request, 'A senha deve ter pelo menos 8 caracteres, um número, uma letra maiúscula e um caractere especial.')
             return redirect('register')   
             
         if password != confirmpassword:
@@ -64,6 +67,14 @@ def register_view(request):
         user = User.objects.create_user(username=email, email=email, password=password, name=name)
         user.set_password(password)
         user.save()
+        
+        subject = "Bem vindo à Fidelity!"
+        message = f"Olá, {name}!\n\nSeu cadastro ao Desafio Técnico da Fidelity foi realizado com sucesso.\n\nSeja bem-vindo!"
+        from_email = settings.EMAIL_HOST_USER
+        recipient_list = [email]
+        
+        send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+        
         
         messages.success(request, "Cadastro realizado com sucesso! Faça login.")
         return redirect('login')
